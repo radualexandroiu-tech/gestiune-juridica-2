@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="description" content="Sistem avansat gestiune cazuri juridice cu ECRIS">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Gestiune Cazuri Juridice Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3a8a;
+            --primary-dark: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #059669;
+            --success: #10b981;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --shadow-lg: rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 70px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sync-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sync-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sync-btn.syncing {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .rotating {
+            animation: rotate 1s linear infinite;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Main Container */
+        .container {
+            padding: 16px;
+            max-width: 100%;
+        }
+
+        /* Notification Banner */
+        .notification-banner {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            padding: 12px 16px;
+            margin: -16px -16px 16px -16px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            border-radius: 0;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+        }
+
+        .notification-banner.show {
+            display: flex;
+        }
+
+        .notification-banner.warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+        }
+
+        .notification-banner.error {
+            background: linear-gradient(135deg, var(--danger) 0%, #b91c1c 100%);
+        }
+
+        .notification-text {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .notification-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .card:active {
+            transform: scale(0.99);
+        }
+
+        .card-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-primary { background: #dbeafe; color: var(--primary); }
+        .badge-success { background: #d1fae5; color: var(--secondary); }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: var(--danger); }
+        .badge-info { background: #dbeafe; color: var(--info); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border-left: 4px solid var(--primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-card:active {
+            transform: scale(0.97);
+        }
+
+        .stat-card.success { border-left-color: var(--secondary); }
+        .stat-card.warning { border-left-color: var(--warning); }
+        .stat-card.danger { border-left-color: var(--danger); }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* List Items */
+        .list-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .list-item:active {
+            background: #f8fafc;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 6px;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--dark);
+            flex: 1;
+        }
+
+        .list-item-meta {
+            font-size: 13px;
+            color: #64748b;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .list-item-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-small.btn-ecris {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-small.btn-sync {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-small:active {
+            transform: scale(0.95);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:active {
+            background: var(--primary-dark);
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+            cursor: pointer;
+            z-index: 50;
+            transition: all 0.3s;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            box-shadow: 0 -2px 10px var(--shadow);
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 11px;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+            padding: 20px;
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--dark);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .file-upload.dragover {
+            border-color: var(--primary);
+            background: #dbeafe;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .file-upload-text {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .file-upload-hint {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
+
+        /* Search */
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Dosar Detail */
+        .dosar-detail {
+            padding: 16px;
+        }
+
+        .dosar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        .dosar-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .dosar-client {
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        .detail-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            min-width: 100px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        .ecris-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            background: #dbeafe;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .ecris-link:active {
+            background: #bfdbfe;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 16px;
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-title">
+                ⚖️ Gestiune Cazuri Pro
+            </div>
+            <button class="sync-btn" onclick="syncAllDosare()" id="syncBtn">
+                <span id="syncIcon">🔄</span>
+                <span id="syncText">Sync ECRIS</span>
+            </button>
+        </div>
+        <div class="header-subtitle" id="headerSubtitle">Dashboard</div>
+    </div>
+
+    <!-- Notification Banner -->
+    <div class="notification-banner" id="notificationBanner">
+        <span class="notification-text" id="notificationText"></span>
+        <button class="notification-close" onclick="hideNotification()">×</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Dashboard View -->
+        <div id="dashboardView">
+            <div class="stats-grid">
+                <div class="stat-card" onclick="switchView('dosare')">
+                    <div class="stat-value" id="statDosareActive">0</div>
+                    <div class="stat-label">Dosare Active</div>
+                </div>
+                <div class="stat-card success" onclick="filterTermeneAproape()">
+                    <div class="stat-value" id="statTermene">0</div>
+                    <div class="stat-label">Termene săpt.</div>
+                </div>
+                <div class="stat-card warning" onclick="switchView('dosare')">
+                    <div class="stat-value" id="statTaskuri">0</div>
+                    <div class="stat-label">Task-uri</div>
+                </div>
+                <div class="stat-card danger" onclick="switchView('clienti')">
+                    <div class="stat-value" id="statClienti">0</div>
+                    <div class="stat-label">Clienți</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    📅 Termene Apropiate
+                    <button class="btn-small btn-sync" onclick="syncAllDosare()">
+                        🔄 Actualizare
+                    </button>
+                </div>
+                <div id="termeneList"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    📌 Dosare Importante
+                </div>
+                <div id="dosareImportanteList"></div>
+            </div>
+        </div>
+
+        <!-- Dosare View -->
+        <div id="dosareView" class="hidden">
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" class="search-input" placeholder="Caută dosare..." id="searchDosare" oninput="filterDosare()">
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="filterDosareByStatus('all')">Toate</button>
+                <button class="tab" onclick="filterDosareByStatus('În curs')">În curs</button>
+                <button class="tab" onclick="filterDosareByStatus('Suspendat')">Suspendat</button>
+                <button class="tab" onclick="filterDosareByStatus('Închis')">Închis</button>
+            </div>
+
+            <div id="dosareListContainer"></div>
+        </div>
+
+        <!-- Dosar Detail View -->
+        <div id="dosarDetailView" class="hidden">
+            <div id="dosarDetailContent"></div>
+        </div>
+
+        <!-- Clienti View -->
+        <div id="clientiView" class="hidden">
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" class="search-input" placeholder="Caută clienți..." id="searchClienti" oninput="filterClienti()">
+            </div>
+            <div id="clientiListContainer"></div>
+        </div>
+
+        <!-- Setari View -->
+        <div id="setariView" class="hidden">
+            <div class="card">
+                <div class="card-header">📥 Import Date</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Import din Excel</label>
+                    <div class="file-upload" id="excelUpload" onclick="document.getElementById('excelFile').click()">
+                        <div class="file-upload-icon">📊</div>
+                        <div class="file-upload-text">Click sau trage fișierul Excel aici</div>
+                        <div class="file-upload-hint">Suportat: .xlsx, .xls</div>
+                    </div>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+                </div>
+
+                <div class="form-group" style="margin-top: 16px;">
+                    <button class="btn btn-secondary" onclick="document.getElementById('importJsonFile').click()">
+                        📤 Import JSON
+                    </button>
+                    <input type="file" id="importJsonFile" accept=".json" style="display:none" onchange="importData(event)">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">💾 Export & Backup</div>
+                <button class="btn btn-secondary" onclick="exportData()" style="margin-bottom: 12px;">📥 Export JSON</button>
+                <button class="btn btn-secondary" onclick="exportToExcel()">📊 Export Excel</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🔄 Sincronizare ECRIS</div>
+                <div class="list-item">
+                    <div class="list-item-title">Actualizare automată termene</div>
+                    <div style="margin-top: 8px; color: #64748b; font-size: 14px;">
+                        Sincronizează automat termene din portal.just.ro pentru toate dosarele
+                    </div>
+                    <button class="btn btn-success" onclick="syncAllDosare()" style="margin-top: 12px;">
+                        🔄 Sincronizează Acum
+                    </button>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-title">Ultima sincronizare</div>
+                    <div style="margin-top: 4px; color: #64748b; font-size: 14px;" id="lastSyncTime">
+                        Niciodată
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🗑️ Curățare Date</div>
+                <div class="list-item">
+                    <div class="list-item-title">Șterge toate datele</div>
+                    <button class="btn btn-danger" onclick="clearAllData()" style="margin-top: 8px;">
+                        🗑️ Șterge Tot
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">ℹ️ Despre Aplicație</div>
+                <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
+                    <strong>Gestiune Cazuri Juridice Pro</strong><br>
+                    Versiune 2.0.0<br><br>
+                    ✨ <strong>Funcționalități Noi:</strong><br>
+                    • Import automat din Excel<br>
+                    • Integrare ECRIS (portal.just.ro)<br>
+                    • Actualizare automată termene<br>
+                    • Link direct la dosare ECRIS<br>
+                    • Export avansat<br><br>
+                    Datele sunt stocate local și sincronizate cu ECRIS.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAB Button -->
+    <button class="fab" onclick="openAddModal()">+</button>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchView('dashboard')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>Acasă</span>
+        </button>
+        <button class="nav-item" onclick="switchView('dosare')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span>Dosare</span>
+        </button>
+        <button class="nav-item" onclick="switchView('clienti')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            <span>Clienți</span>
+        </button>
+        <button class="nav-item" onclick="switchView('setari')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span>Setări</span>
+        </button>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Adaugă Nou</span>
+                <button class="close-btn" onclick="closeAddModal()">&times;</button>
+            </div>
+            <button class="btn btn-primary" onclick="showForm('dosar')" style="margin-bottom: 12px;">📁 Dosar Nou</button>
+            <button class="btn btn-primary" onclick="showForm('client')" style="margin-bottom: 12px;">👤 Client Nou</button>
+            <button class="btn btn-primary" onclick="showForm('termen')" style="margin-bottom: 12px;">📅 Termen Nou</button>
+            <button class="btn btn-primary" onclick="showForm('task')">✅ Task Nou</button>
+        </div>
+    </div>
+
+    <!-- Form Modal -->
+    <div class="modal" id="formModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="formTitle">Formular</span>
+                <button class="close-btn" onclick="closeFormModal()">&times;</button>
+            </div>
+            <div id="formContainer"></div>
+        </div>
+    </div>
+
+    <script src="app_v2.js"></script>
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
+
+        // Drag and drop for Excel upload
+        const excelUpload = document.getElementById('excelUpload');
+        excelUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            excelUpload.classList.add('dragover');
+        });
+        excelUpload.addEventListener('dragleave', () => {
+            excelUpload.classList.remove('dragover');
+        });
+        excelUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            excelUpload.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                importExcelFile(file);
+            }
+        });
+    </script>
+</body>
+</html>
